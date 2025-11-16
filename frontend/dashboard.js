@@ -1,35 +1,131 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
-
-const firebaseConfig = {
-    apiKey: "AIzaSyBlOH9vbKxssHRppN0SJ0jYngVEvYq9z7w",
-    authDomain: "taskerrandbeta.firebaseapp.com",
-    projectId: "taskerrandbeta",
-    storageBucket: "taskerrandbeta.firebasestorage.app",
-    messagingSenderId: "213164039137",
-    appId: "1:213164039137:web:8a8f6f7d862ba1537d10a0"
-};
+import { firebaseConfig } from "./config.js";
+import { api } from "./api.js";
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
+let currentUser = null;
+let userData = null;
+
 // Check user state
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
     if (!user) {
-        // Not logged in → redirect back to login
         window.location.href = "./index.html";
         return;
     }
-
-    // Logged in → show user info
-    document.getElementById("user-info").textContent =
-        `Signed in as: ${user.email}`;
+    
+    currentUser = user;
+    
+    try {
+        // Get user data from backend
+        userData = await api.getCurrentUser();
+        displayUserInfo(user, userData);
+        
+        // Show admin link if user is admin
+        if (userData.is_admin) {
+            const adminLink = document.getElementById("admin-link");
+            if (adminLink) {
+                adminLink.style.display = "block";
+            }
+        }
+        
+        loadDashboardStats();
+        loadMyTasks();
+    } catch (error) {
+        console.error("Error loading user data:", error);
+        displayUserInfo(user, null);
+    }
 });
+
+function displayUserInfo(user, userData) {
+    const usernameEl = document.getElementById("username");
+    const profileEl = document.getElementById("profile");
+    
+    if (usernameEl) {
+        usernameEl.textContent = `Welcome, ${user.displayName || user.email}!`;
+    }
+    
+    if (profileEl) {
+        profileEl.src = user.photoURL || "";
+        profileEl.alt = user.displayName || "Profile";
+    }
+}
+
+async function loadDashboardStats() {
+    try {
+        const tasks = await api.getMyTasks();
+        
+        const stats = {
+            posted: tasks.filter(t => t.poster_id === userData.id).length,
+            accepted: tasks.filter(t => t.seeker_id === userData.id).length,
+            completed: tasks.filter(t => t.status === "completed" && t.seeker_id === userData.id).length,
+            active: tasks.filter(t => t.status === "ongoing" || t.status === "pending_confirmation").length
+        };
+        
+        const statsContainer = document.getElementById("stats");
+        if (statsContainer) {
+            statsContainer.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>${stats.posted}</h3>
+                        <p>Tasks Posted</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>${stats.accepted}</h3>
+                        <p>Tasks Accepted</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>${stats.completed}</h3>
+                        <p>Tasks Completed</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>${stats.active}</h3>
+                        <p>Active Tasks</p>
+                    </div>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error("Error loading stats:", error);
+    }
+}
+
+async function loadMyTasks() {
+    try {
+        const tasks = await api.getMyTasks();
+        const tasksContainer = document.getElementById("my-tasks");
+        
+        if (tasksContainer) {
+            if (tasks.length === 0) {
+                tasksContainer.innerHTML = "<p class='loading'>No tasks yet. <a href='./post-task.html'>Post your first task!</a></p>";
+                return;
+            }
+            
+            tasksContainer.innerHTML = tasks.map(task => `
+                <div class="task-card" onclick="window.location.href='./task-detail.html?id=${task.id}'">
+                    <h3>${task.title}</h3>
+                    <p>${task.description.substring(0, 100)}${task.description.length > 100 ? '...' : ''}</p>
+                    <div class="task-meta">
+                        <span class="task-status status-${task.status}">${task.status.replace('_', ' ')}</span>
+                        <span><strong>$${task.payment.toFixed(2)}</strong></span>
+                    </div>
+                </div>
+            `).join('');
+        }
+    } catch (error) {
+        console.error("Error loading tasks:", error);
+    }
+}
 
 // Logout button event
-document.getElementById("google-logout-btn-id").addEventListener("click", () => {
-    signOut(auth).then(() => {
-        window.location.href = "../frontend/index.html";
+const logoutBtn = document.getElementById("google-logout-btn-id");
+if (logoutBtn) {
+    logoutBtn.addEventListener("click", () => {
+        signOut(auth).then(() => {
+            window.location.href = "./index.html";
+        });
     });
-});
+}

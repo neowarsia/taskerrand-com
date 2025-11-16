@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Taskerrand</title>
+    <script type="module" src="./admin-dashboard.js" defer></script>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <h1>Taskerrand - Admin</h1>
+            <ul class="nav-links">
+                <li><a href="./dashboard.html">User Dashboard</a></li>
+                <li><a href="./admin-dashboard.html">Admin Dashboard</a></li>
+                <li class="user-info">
+                    <img id="profile" src="" alt="Profile">
+                    <span id="username"></span>
+                    <button id="google-logout-btn-id" class="btn btn-outline">Logout</button>
+                </li>
+            </ul>
+        </nav>
+    </header>
+    
+    <main>
+        <div class="container">
+            <h2>Admin Dashboard</h2>
+            <div id="admin-stats" class="stats-grid"></div>
+        </div>
+        
+        <div class="container">
+            <h2>All Tasks</h2>
+            <div style="margin-bottom: 1rem;">
+                <label>Filter by status: </label>
+                <select id="task-filter" onchange="filterTasks()">
+                    <option value="">All</option>
+                    <option value="available">Available</option>
+                    <option value="ongoing">Ongoing</option>
+                    <option value="pending_confirmation">Pending Confirmation</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+            </div>
+            <div id="tasks-container" class="task-grid"></div>
+        </div>
+        
+        <div class="container">
+            <h2>All Users</h2>
+            <div id="users-container"></div>
+        </div>
+    </main>
+</body>
+</html>
+

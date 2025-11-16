@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Taskerrand</title>
-    <script type="module" src="./dashboard.js" defer></script>
+    <title>Browse Tasks - Taskerrand</title>
+    <script type="module" src="./browse-tasks.js" defer></script>
     <link rel="stylesheet" href="./style.css">
 </head>
 <body>
@@ -15,7 +15,6 @@
                 <li><a href="./dashboard.html">Dashboard</a></li>
                 <li><a href="./browse-tasks.html">Browse Tasks</a></li>
                 <li><a href="./post-task.html">Post Task</a></li>
-                <li id="admin-link" style="display: none;"><a href="./admin-dashboard.html">Admin</a></li>
                 <li class="user-info">
                     <img id="profile" src="" alt="Profile">
                     <span id="username"></span>
@@ -27,14 +26,12 @@
     
     <main>
         <div class="container">
-            <h2>Dashboard</h2>
-            <div id="stats"></div>
-        </div>
-        
-        <div class="container">
-            <h2>My Tasks</h2>
-            <div id="my-tasks" class="task-grid"></div>
+            <h2>Browse Available Tasks</h2>
+            <div id="tasks-container" class="task-grid">
+                <div class="loading">Loading tasks...</div>
+            </div>
         </div>
     </main>
 </body>
 </html>
+
