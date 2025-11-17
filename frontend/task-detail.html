@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Details - Taskerrand</title>
+    <script type="module" src="./task-detail.js" defer></script>
+    <link rel="stylesheet" href="./style.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+</head>
+<body>
+    <header>
+        <nav>
+            <h1>Taskerrand</h1>
+            <ul class="nav-links">
+                <li><a href="./dashboard.html">Dashboard</a></li>
+                <li><a href="./browse-tasks.html">Browse Tasks</a></li>
+                <li><a href="./post-task.html">Post Task</a></li>
+                <li class="user-info">
+                    <img id="profile" src="" alt="Profile">
+                    <span id="username"></span>
+                    <button id="google-logout-btn-id" class="btn btn-outline">Logout</button>
+                </li>
+            </ul>
+        </nav>
+    </header>
+    
+    <main>
+        <div id="error-message"></div>
+        <div class="container" id="task-container">
+            <div class="loading">Loading task details...</div>
+        </div>
+        
+        <div class="container" id="actions-container" style="display: none;">
+            <h3>Actions</h3>
+            <div id="action-buttons"></div>
+        </div>
+        
+        <div class="container" id="chat-container" style="display: none;">
+            <h3>Messages</h3>
+            <div class="chat-container">
+                <div class="chat-messages" id="messages"></div>
+                <div class="chat-input">
+                    <input type="text" id="message-input" placeholder="Type a message...">
+                    <button class="btn btn-primary" id="send-message-btn">Send</button>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
+

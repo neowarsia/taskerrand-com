@@ -1,0 +1,414 @@
+from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy.orm import Session
+import uvicorn
+from typing import List, Optional
+from datetime import datetime
+
+from database import SessionLocal, engine, Base
+from models import User, Task, Message, Feedback
+from schemas import (
+    UserCreate, UserResponse, TaskCreate, TaskUpdate, TaskResponse,
+    MessageCreate, MessageResponse, FeedbackCreate, FeedbackResponse
+)
+from auth import verify_firebase_token, get_current_user
+
+# Create database tables
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI(title="Taskerrand API", version="1.0.0")
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, specify your frontend domain
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+security = HTTPBearer()
+
+# Dependency to get database session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# Dependency to get current user
+async def get_current_user_db(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+):
+    token = credentials.credentials
+    print(f"DEBUG: Received token (first 20 chars): {token[:20]}...")
+    user_data = await verify_firebase_token(token)
+    if not user_data:
+        print("ERROR: Token verification failed")
+        raise HTTPException(status_code=401, detail="Invalid authentication token")
+    
+    # Get or create user in database
+    user = db.query(User).filter(User.firebase_uid == user_data["uid"]).first()
+    if not user:
+        user = User(
+            firebase_uid=user_data["uid"],
+            email=user_data.get("email", ""),
+            name=user_data.get("name", ""),
+            photo_url=user_data.get("picture", ""),
+            is_admin=user_data.get("email", "").endswith("@admin.taskerrand.com")  # Admin check
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    
+    return user
+
+# ==================== USER ENDPOINTS ====================
+
+@app.get("/api/users/me", response_model=UserResponse)
+async def get_current_user_info(current_user: User = Depends(get_current_user_db)):
+    return current_user
+
+@app.get("/api/users/{user_id}", response_model=UserResponse)
+async def get_user(user_id: int, current_user: User = Depends(get_current_user_db), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+# ==================== TASK ENDPOINTS ====================
+
+@app.post("/api/tasks", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
+async def create_task(
+    task: TaskCreate,
+    current_user: User = Depends(get_current_user_db),
+    db: Session = Depends(get_db)
+):
+    db_task = Task(
+        **task.dict(),
+        poster_id=current_user.id,
+        status="available"
+    )
+    db.add(db_task)
+    db.commit()
+    db.refresh(db_task)
+    return db_task
+
+@app.get("/api/tasks", response_model=List[TaskResponse])
+async def get_tasks(
+    status_filter: Optional[str] = None,
+    current_user: User = Depends(get_current_user_db),
+    db: Session = Depends(get_db)
+):
+    query = db.query(Task)
+    if status_filter:
+        query = query.filter(Task.status == status_filter)
+    else:
+        # Regular users see available tasks, admins see all
+        if not current_user.is_admin:
+            query = query.filter(Task.status == "available")
+    return query.order_by(Task.created_at.desc()).all()
+
+@app.get("/api/tasks/{task_id}", response_model=TaskResponse)
+async def get_task(
+    task_id: int,
+    current_user: User = Depends(get_current_user_db),
+    db: Session = Depends(get_db)
+):
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return task
+
+@app.put("/api/tasks/{task_id}", response_model=TaskResponse)
+async def update_task(
+    task_id: int,
+    task_update: TaskUpdate,
+    current_user: User = Depends(get_current_user_db),
+    db: Session = Depends(get_db)
+):
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    # Only poster or admin can update
+    if task.poster_id != current_user.id and not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Not authorized to update this task")
+    
+    for key, value in task_update.dict(exclude_unset=True).items():
+        setattr(task, key, value)
+    
+    db.commit()
+    db.refresh(task)
+    return task
+
+@app.delete("/api/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_task(
+    task_id: int,
+    current_user: User = Depends(get_current_user_db),
+    db: Session = Depends(get_db)
+):
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    # Only poster or admin can delete
+    if task.poster_id != current_user.id and not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this task")
+    
+    db.delete(task)
+    db.commit()
+    return None
+
+@app.post("/api/tasks/{task_id}/accept", response_model=TaskResponse)
+async def accept_task(
+    task_id: int,
+    current_user: User = Depends(get_current_user_db),
+    db: Session = Depends(get_db)
+):
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    if task.status != "available":
+        raise HTTPException(status_code=400, detail="Task is not available")
+    
+    if task.poster_id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot accept your own task")
+    
+    task.status = "ongoing"
+    task.seeker_id = current_user.id
+    task.accepted_at = datetime.utcnow()
+    
+    db.commit()
+    db.refresh(task)
+    return task
+
+@app.post("/api/tasks/{task_id}/complete", response_model=TaskResponse)
+async def complete_task(
+    task_id: int,
+    current_user: User = Depends(get_current_user_db),
+    db: Session = Depends(get_db)
+):
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    if task.status != "ongoing":
+        raise HTTPException(status_code=400, detail="Task is not ongoing")
+    
+    # Only seeker can mark as complete
+    if task.seeker_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the seeker can mark task as complete")
+    
+    task.status = "pending_confirmation"
+    
+    db.commit()
+    db.refresh(task)
+    return task
+
+@app.post("/api/tasks/{task_id}/confirm", response_model=TaskResponse)
+async def confirm_task(
+    task_id: int,
+    current_user: User = Depends(get_current_user_db),
+    db: Session = Depends(get_db)
+):
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    if task.status != "pending_confirmation":
+        raise HTTPException(status_code=400, detail="Task is not pending confirmation")
+    
+    # Only poster can confirm
+    if task.poster_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the poster can confirm task completion")
+    
+    task.status = "completed"
+    task.completed_at = datetime.utcnow()
+    
+    db.commit()
+    db.refresh(task)
+    return task
+
+@app.post("/api/tasks/{task_id}/cancel", response_model=TaskResponse)
+async def cancel_task(
+    task_id: int,
+    current_user: User = Depends(get_current_user_db),
+    db: Session = Depends(get_db)
+):
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    # Only poster can cancel available tasks, both can cancel ongoing
+    if task.status == "available":
+        if task.poster_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Only the poster can cancel available tasks")
+    elif task.status == "ongoing":
+        if task.poster_id != current_user.id and task.seeker_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Not authorized to cancel this task")
+    else:
+        raise HTTPException(status_code=400, detail="Cannot cancel task in current status")
+    
+    task.status = "cancelled"
+    task.seeker_id = None
+    task.accepted_at = None
+    
+    db.commit()
+    db.refresh(task)
+    return task
+
+@app.get("/api/users/me/tasks", response_model=List[TaskResponse])
+async def get_my_tasks(
+    task_type: Optional[str] = None,  # "posted" or "accepted"
+    current_user: User = Depends(get_current_user_db),
+    db: Session = Depends(get_db)
+):
+    if task_type == "posted":
+        return db.query(Task).filter(Task.poster_id == current_user.id).order_by(Task.created_at.desc()).all()
+    elif task_type == "accepted":
+        return db.query(Task).filter(Task.seeker_id == current_user.id).order_by(Task.created_at.desc()).all()
+    else:
+        # Return all tasks user is involved in
+        return db.query(Task).filter(
+            (Task.poster_id == current_user.id) | (Task.seeker_id == current_user.id)
+        ).order_by(Task.created_at.desc()).all()
+
+# ==================== MESSAGE ENDPOINTS ====================
+
+@app.post("/api/messages", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
+async def create_message(
+    message: MessageCreate,
+    current_user: User = Depends(get_current_user_db),
+    db: Session = Depends(get_db)
+):
+    # Verify user is part of the task
+    task = db.query(Task).filter(Task.id == message.task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    if task.poster_id != current_user.id and task.seeker_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to send message for this task")
+    
+    db_message = Message(
+        **message.dict(),
+        sender_id=current_user.id
+    )
+    db.add(db_message)
+    db.commit()
+    db.refresh(db_message)
+    return db_message
+
+@app.get("/api/tasks/{task_id}/messages", response_model=List[MessageResponse])
+async def get_task_messages(
+    task_id: int,
+    current_user: User = Depends(get_current_user_db),
+    db: Session = Depends(get_db)
+):
+    # Verify user is part of the task
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    if task.poster_id != current_user.id and task.seeker_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to view messages for this task")
+    
+    return db.query(Message).filter(Message.task_id == task_id).order_by(Message.created_at.asc()).all()
+
+# ==================== FEEDBACK ENDPOINTS ====================
+
+@app.post("/api/feedback", response_model=FeedbackResponse, status_code=status.HTTP_201_CREATED)
+async def create_feedback(
+    feedback: FeedbackCreate,
+    current_user: User = Depends(get_current_user_db),
+    db: Session = Depends(get_db)
+):
+    # Verify task is completed and user is the poster
+    task = db.query(Task).filter(Task.id == feedback.task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    if task.status != "completed":
+        raise HTTPException(status_code=400, detail="Can only leave feedback on completed tasks")
+    
+    if task.poster_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the poster can leave feedback")
+    
+    if task.seeker_id != feedback.seeker_id:
+        raise HTTPException(status_code=400, detail="Invalid seeker for this task")
+    
+    # Check if feedback already exists
+    existing = db.query(Feedback).filter(
+        Feedback.task_id == feedback.task_id,
+        Feedback.poster_id == current_user.id
+    ).first()
+    
+    if existing:
+        raise HTTPException(status_code=400, detail="Feedback already provided for this task")
+    
+    db_feedback = Feedback(
+        **feedback.dict(),
+        poster_id=current_user.id
+    )
+    db.add(db_feedback)
+    db.commit()
+    db.refresh(db_feedback)
+    return db_feedback
+
+@app.get("/api/users/{user_id}/feedback", response_model=List[FeedbackResponse])
+async def get_user_feedback(
+    user_id: int,
+    current_user: User = Depends(get_current_user_db),
+    db: Session = Depends(get_db)
+):
+    return db.query(Feedback).filter(Feedback.seeker_id == user_id).order_by(Feedback.created_at.desc()).all()
+
+# ==================== ADMIN ENDPOINTS ====================
+
+@app.get("/api/admin/users", response_model=List[UserResponse])
+async def get_all_users(
+    current_user: User = Depends(get_current_user_db),
+    db: Session = Depends(get_db)
+):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return db.query(User).all()
+
+@app.get("/api/admin/tasks", response_model=List[TaskResponse])
+async def get_all_tasks(
+    status_filter: Optional[str] = None,
+    current_user: User = Depends(get_current_user_db),
+    db: Session = Depends(get_db)
+):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    query = db.query(Task)
+    if status_filter:
+        query = query.filter(Task.status == status_filter)
+    return query.order_by(Task.created_at.desc()).all()
+
+@app.delete("/api/admin/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def admin_delete_task(
+    task_id: int,
+    current_user: User = Depends(get_current_user_db),
+    db: Session = Depends(get_db)
+):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    db.delete(task)
+    db.commit()
+    return None
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+

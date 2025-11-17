@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse Tasks - Taskerrand</title>
+    <script type="module" src="./browse-tasks.js" defer></script>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <h1>Taskerrand</h1>
+            <ul class="nav-links">
+                <li><a href="./dashboard.html">Dashboard</a></li>
+                <li><a href="./browse-tasks.html">Browse Tasks</a></li>
+                <li><a href="./post-task.html">Post Task</a></li>
+                <li class="user-info">
+                    <img id="profile" src="" alt="Profile">
+                    <span id="username"></span>
+                    <button id="google-logout-btn-id" class="btn btn-outline">Logout</button>
+                </li>
+            </ul>
+        </nav>
+    </header>
+    
+    <main>
+        <div class="container">
+            <h2>Browse Available Tasks</h2>
+            <div id="tasks-container" class="task-grid">
+                <div class="loading">Loading tasks...</div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
+

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post Task - Taskerrand</title>
+    <script type="module" src="./post-task.js" defer></script>
+    <link rel="stylesheet" href="./style.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+</head>
+<body>
+    <header>
+        <nav>
+            <h1>Taskerrand</h1>
+            <ul class="nav-links">
+                <li><a href="./dashboard.html">Dashboard</a></li>
+                <li><a href="./browse-tasks.html">Browse Tasks</a></li>
+                <li><a href="./post-task.html">Post Task</a></li>
+                <li class="user-info">
+                    <img id="profile" src="" alt="Profile">
+                    <span id="username"></span>
+                    <button id="google-logout-btn-id" class="btn btn-outline">Logout</button>
+                </li>
+            </ul>
+        </nav>
+    </header>
+    
+    <main>
+        <div class="container">
+            <h2>Post a New Task</h2>
+            <div id="error-message"></div>
+            <form id="task-form">
+                <div class="form-group">
+                    <label for="title">Task Title *</label>
+                    <input type="text" id="title" name="title" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="description">Description *</label>
+                    <textarea id="description" name="description" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="payment">Payment Amount ($) *</label>
+                    <input type="number" id="payment" name="payment" step="0.01" min="0" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="contact_number">Contact Number</label>
+                    <input type="tel" id="contact_number" name="contact_number">
+                </div>
+                
+                <div class="form-group">
+                    <label for="schedule">Schedule (Optional)</label>
+                    <input type="datetime-local" id="schedule" name="schedule">
+                </div>
+                
+                <div class="form-group">
+                    <label>Location * (Click on the map to select)</label>
+                    <input type="text" id="location_address" name="location_address" placeholder="Search for address or click on map">
+                    <div id="map"></div>
+                    <input type="hidden" id="location_lat" name="location_lat" required>
+                    <input type="hidden" id="location_lng" name="location_lng" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Post Task</button>
+                <a href="./dashboard.html" class="btn btn-outline">Cancel</a>
+            </form>
+        </div>
+    </main>
+</body>
+</html>
+
