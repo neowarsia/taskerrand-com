@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Post Task - Taskerrand</title>
+    <link rel="icon" href="images/note.png" type="image/png">
     <script type="module" src="./post-task.js" defer></script>
-    <link rel="stylesheet" href="./style.css">
+    
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
           integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
@@ -14,134 +15,25 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
             crossorigin=""></script>
-    <style>
-        html, body {
-            height: 100%;
-            margin: 0;
-            font-family: Arial, Helvetica, sans-serif;
-            color: #111;
-        }
 
-        body {
-            background-image: url("images/background1.jpg");
-            background-size: cover;
-            background-position: center center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            min-height: 100vh;
-        }
-
-        /* subtle dark overlay behind content */
-        body::before {
-            content: "";
-            position: fixed;
-            inset: 0;
-            background: rgba(58,58,58,0.35);
-            z-index: 0;
-            pointer-events: none;
-        }
-
-        header, main, footer { position: relative; z-index: 1; }
-
-        header nav {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1rem 2rem;
-            background: rgba(0,0,0,0.25);
-            backdrop-filter: blur(4px);
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-            box-sizing: border-box;
-            min-height: 64px;
-        }
-
-        header nav h1 { margin: 0; font-size: 1.25rem; color: #fff; }
-
-        .nav-links { list-style: none; display: flex; gap: 1rem; margin: 0; padding: 0; align-items: center; }
-        .nav-links li { display: flex; align-items: center; }
-        .nav-links a { color: #fff; text-decoration: none; padding: 0.35rem 0.6rem; border-radius: 4px; display: inline-block; transition: background .12s ease, transform .12s ease; }
-        /* Hover: slightly darker background and a small scale-up */
-        .nav-links a:hover { background: rgba(0,0,0,0.12); transform: translateY(-2px) scale(1.04); }
-
-        /* Ensure profile and username sit inline with nav links */
-        .user-info { display: flex; align-items: center; gap: 0.5rem; }
-        #username { display: inline-block; color: #fff; font-weight: 600; }
-
-        /* Profile avatar */
-        #profile {
-            width: 40px;
-            height: 40px;
-            display: block;
-            aspect-ratio: 1 / 1;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid rgba(255,255,255,0.15);
-            background-color: rgba(255,255,255,0.06);
-        }
-
-        main { padding: 2rem; min-height: calc(100vh - 140px); }
-
-        .container {
-            max-width: 1100px;
-            margin: 1rem auto;
-            background: rgba(255,255,255,0.96);
-            color: #111;
-            padding: 1.25rem 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 10px 30px rgba(2,6,23,0.08);
-        }
-
-        h2 { margin-top: 0; color: #111; }
-
-        /* Form styles */
-        .form-group { margin-bottom: 1rem; display: flex; flex-direction: column; }
-        label { margin-bottom: 0.4rem; font-weight: 600; color: #111827; }
-        input[type="text"], input[type="number"], input[type="tel"], input[type="datetime-local"], textarea {
-            padding: 0.6rem 0.8rem;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            font-size: 1rem;
-            color: #111;
-            background: #ffffff;
-            box-shadow: inset 0 1px 0 rgba(16,24,40,0.02);
-        }
-
-        textarea { min-height: 120px; resize: vertical; }
-
-        #map { height: 320px; margin-top: 0.5rem; border-radius: 6px; border: 1px solid #e6e7ea; }
-
-        .btn { display: inline-block; padding: 0.6rem 1rem; border-radius: 8px; font-weight: 600; cursor: pointer; border: 1px solid transparent; }
-        .btn-primary { background: #2563eb; color: #fff; box-shadow: 0 8px 20px rgba(37,99,235,0.14); }
-        .btn-outline { background: transparent; color: #374151; border: 1px solid #d1d5db; }
-
-        #google-logout-btn-id { background-color: #db4437; color: white; border: none; padding: 8px 16px; font-size: 14px; border-radius: 6px; cursor: pointer; }
-        #google-logout-btn-id:hover { background-color: #c33d2e; }
-
-        .error { color: #7f1d1d; background: rgba(254, 226, 226, 0.9); padding: 0.6rem; border-radius: 6px; margin-bottom: 0.75rem; }
-        .error-shake { animation: shake 360ms; }
-        @keyframes shake { 10%, 90% { transform: translateX(-1px); } 20%, 80% { transform: translateX(2px); } 30%, 50%, 70% { transform: translateX(-4px); } 40%, 60% { transform: translateX(4px); } }
-
-        @media (max-width: 680px) {
-            header nav { flex-direction: column; gap: 0.5rem; padding: 0.75rem 1rem; }
-            main { padding: 1rem; }
-            .container { margin: 0.75rem; padding: 0.9rem; }
-            #map { height: 220px; }
-            .btn { width: 100%; text-align: center; }
-        }
-    </style>
+    <link rel="stylesheet" href="../frontend/css/header.css">
+    <link rel="stylesheet" href="../frontend/css/main.css">
+    <link rel="stylesheet" href="../frontend/css/footer.css">
 </head>
 <body>
     <header>
-        <nav>
+        <nav class="header-nav">
             <h1>Taskerrand</h1>
-            <ul class="nav-links">
-                <li><a href="./dashboard.html">Dashboard</a></li>
-                <li><a href="./browse-tasks.html">Browse Tasks</a></li>
-                <li><a href="./post-task.html">Post Task</a></li>
+            <div class="hamburger" id="hamburger">☰</div>
+            <ul class="nav-links" id="nav-menu">
+                <li class="header-buttons"><a href="./dashboard.html">Dashboard</a></li>
+                <li class="header-buttons"><a href="./browse-tasks.html">Browse Tasks</a></li>
+                <li class="header-buttons"><a href="./post-task.html">Post Task</a></li>
+                <li class="header-buttons" id="admin-link" style="display: none;"><a href="./admin-dashboard.html">Admin</a></li>
+                <button id="google-logout-btn-id" class="header-buttons">Logout</button>
                 <li class="user-info">
                     <img id="profile" src="" alt="Profile">
                     <span id="username"></span>
-                    <button id="google-logout-btn-id" class="btn btn-outline">Logout</button>
                 </li>
             </ul>
         </nav>
@@ -185,15 +77,36 @@
                     <input type="hidden" id="location_lat" name="location_lat" required>
                     <input type="hidden" id="location_lng" name="location_lng" required>
                 </div>
-                 <div id="error-message"></div>
-                <button type="submit" class="btn btn-primary">Post Task</button>
-                <a href="./dashboard.html" class="btn btn-outline">Cancel</a>
+                <div id="error-message"></div>
+
+                <div class="post-task-buttons-container">
+                    <span class="post-task-buttons">
+                        <button type="submit" class="btn btn-primary">Post Task</button>
+                    </span>
+                    <span class="post-task-buttons">
+                        <a href="./dashboard.html" class="btn btn-outline">Cancel</a>
+                    </span>
+                </div> 
+
             </form>
         </div>
     </main>
     <footer>
         <p>&copy; 2025 Taskerrand. All rights reserved.</p>
     </footer>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", () => {
+    const hamburger = document.getElementById("hamburger");
+    const navMenu = document.getElementById("nav-menu");
+
+    if (!hamburger || !navMenu) return;
+
+    hamburger.addEventListener("click", () => {
+    navMenu.classList.toggle("active");
+            });
+        });
+    </script>
 </body>
 </html>
 

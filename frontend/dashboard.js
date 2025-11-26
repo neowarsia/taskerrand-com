@@ -100,18 +100,25 @@ async function loadMyTasks() {
         
         if (tasksContainer) {
             if (tasks.length === 0) {
-                tasksContainer.innerHTML = "<p class='loading'>No tasks yet. <a href='./post-task.html'>Post your first task!</a></p>";
+                tasksContainer.innerHTML = `
+                    <div class="empty-state">
+                        <p>No tasks yet looks like you haven't posted anything.</p>
+                        <a class="post-first-btn" href="./post-task.html">Post your first task!</a>
+                    </div>
+                `;
                 return;
             }
             
             tasksContainer.innerHTML = tasks.map(task => `
                 <div class="task-card" onclick="window.location.href='./task-detail.html?id=${task.id}'">
-                    <h3>${task.title}</h3>
-                    <p>${task.description.substring(0, 100)}${task.description.length > 100 ? '...' : ''}</p>
+                    <a></a>
+                    <h3>Task: ${task.title}</h3>
+                    <p>Description: ${task.description.substring(0, 100)}${task.description.length > 100 ? '...' : ''}</p>
                     <div class="task-meta">
-                        <span class="task-status status-${task.status}">${task.status.replace('_', ' ')}</span>
-                        <span><strong>₱${task.payment.toFixed(2)}</strong></span>
+                        <span style="display: block" class="task-status status-${task.status}">Status: ${task.status.replace('_', ' ')}</span>
+                        <span><strong>Payment: ₱${task.payment.toFixed(2)}</strong></span>
                     </div>
+                    <a></a>
                 </div>
             `).join('');
         }
@@ -129,3 +136,10 @@ if (logoutBtn) {
         });
     });
 }
+
+
+
+
+
+
+

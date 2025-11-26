@@ -313,8 +313,9 @@ document.getElementById("task-form").addEventListener("submit", async (e) => {
 
     const errorDiv = document.getElementById("error-message");
     errorDiv.innerHTML = "";
-    errorDiv.classList.remove("error-shake");
+    errorDiv.classList.remove("error-shake", "active");
 
+    // Fields
     const title = document.getElementById("title").value;
     const description = document.getElementById("description").value;
     const payment = document.getElementById("payment").value;
@@ -324,62 +325,55 @@ document.getElementById("task-form").addEventListener("submit", async (e) => {
     const address = document.getElementById("location_address").value;
     const scheduleRaw = document.getElementById("schedule").value;
 
-    // Required fields
-    if (!title || !description || !payment || !contactRaw || !lat || !lng || !address || !scheduleRaw) {
-        errorDiv.innerHTML = "<div class='error'>All fields are required</div>";
-
-        // shake effect
+    function showError(msg) {
+        errorDiv.innerHTML = msg;
+        errorDiv.classList.add("active");
+        
+        // Restart animation
+        errorDiv.classList.remove("error-shake");
         void errorDiv.offsetWidth;
         errorDiv.classList.add("error-shake");
+    }
 
+    // Required fields
+    if (!title || !description || !payment || !contactRaw || !lat || !lng || !address || !scheduleRaw) {
+        showError("<div class='error'>All fields are required</div>");
         return;
     }
 
-    // Ensure contact contains only digits and meets minimal length
+    // Digits only
     const contact = contactRaw.replace(/\D/g, '');
     if (contact !== contactRaw) {
-        errorDiv.innerHTML = "<div class='error'>Contact number must contain digits only.</div>";
-        void errorDiv.offsetWidth;
-        errorDiv.classList.add("error-shake");
+        showError("<div class='error'>Contact number must contain digits only.</div>");
         return;
     }
 
     if (contact.length < 7) {
-        errorDiv.innerHTML = "<div class='error'>Please enter a valid contact number (at least 7 digits).</div>";
-        void errorDiv.offsetWidth;
-        errorDiv.classList.add("error-shake");
+        showError("<div class='error'>Please enter a valid contact number (at least 7 digits).</div>");
         return;
     }
 
-    // Date check
-    // Validate schedule format: ensure year is 4 digits and date is valid
-    // Typical datetime-local value: YYYY-MM-DDThh:mm (seconds optional on some browsers)
+    // Date validation
     const yearPart = scheduleRaw.substring(0, 4);
     if (!/^[0-9]{4}$/.test(yearPart)) {
-        errorDiv.innerHTML = "<div class='error'>Please use a valid date with a 4-digit year (YYYY). Remove any extra digits from the year.</div>";
-        void errorDiv.offsetWidth;
-        errorDiv.classList.add("error-shake");
+        showError("<div class='error'>Please use a valid date with a 4-digit year (YYYY).</div>");
         return;
     }
 
     const selectedDate = new Date(scheduleRaw);
     const now = new Date();
 
-    // Check for invalid Date (e.g., malformed input)
     if (isNaN(selectedDate.getTime())) {
-        errorDiv.innerHTML = "<div class='error'>The provided schedule is invalid. Please pick a valid date and time.</div>";
-        void errorDiv.offsetWidth;
-        errorDiv.classList.add("error-shake");
+        showError("<div class='error'>The provided schedule is invalid. Please pick a valid date and time.</div>");
         return;
     }
 
     if (selectedDate < now) {
-        errorDiv.innerHTML = "<div class='error'>The selected date and time cannot be in the past</div>";
-        void errorDiv.offsetWidth;
-        errorDiv.classList.add("error-shake");
+        showError("<div class='error'>The selected date and time cannot be in the past</div>");
         return;
     }
 
+    // Payload
     const formData = {
         title,
         description,
@@ -396,13 +390,10 @@ document.getElementById("task-form").addEventListener("submit", async (e) => {
         alert("Task posted successfully!");
         window.location.href = "./dashboard.html";
     } catch (error) {
-        errorDiv.innerHTML = `<div class='error'>Error: ${error.message}</div>`;
-
-        // shake effect
-        void errorDiv.offsetWidth;
-        errorDiv.classList.add("error-shake");
+        showError(`<div class='error'>Error: ${error.message}</div>`);
     }
 });
+
 
 
 

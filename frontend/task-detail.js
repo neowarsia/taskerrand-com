@@ -73,9 +73,9 @@ function displayTask() {
     const container = document.getElementById("task-container");
     
     container.innerHTML = `
-        <h2>${taskData.title}</h2>
+        <h2>Title: ${taskData.title}</h2>
         <div style="margin-bottom: 1rem;">
-            <span class="task-status status-${taskData.status}">${taskData.status.replace('_', ' ')}</span>
+            <span class="task-status status-${taskData.status}">Status: ${taskData.status.replace('_', ' ')}</span>
         </div>
         <p><strong>Description:</strong></p>
         <p>${taskData.description}</p>

@@ -102,15 +102,16 @@ async function loadAllTasks(statusFilter = null) {
         
         container.innerHTML = tasks.map(task => `
             <div class="task-card">
-                <h3>${task.title}</h3>
-                <p>${task.description.substring(0, 100)}${task.description.length > 100 ? '...' : ''}</p>
+                <h3>Title: ${task.title}</h3>
+                <p>Description: ${task.description.substring(0, 100)}${task.description.length > 100 ? '...' : ''}</p>
                 <div class="task-meta">
-                    <span class="task-status status-${task.status}">${task.status.replace('_', ' ')}</span>
+                    <span style="display: block" class="task-status status-${task.status}">Status: ${task.status.replace('_', ' ')}</span>
+                 
                     <span><strong>₱${task.payment.toFixed(2)}</strong></span>
                 </div>
-                <div style="margin-top: 1rem;">
-                    <a href="./task-detail.html?id=${task.id}" class="btn btn-primary" style="margin-right: 0.5rem;">View</a>
-                    <button class="btn btn-danger" onclick="deleteTask(${task.id})">Delete</button>
+                <div id="admin-tasks-buttons" style="margin-top: 1rem;">
+                    <a id="admin-view-task-btn" href="./task-detail.html?id=${task.id}" class="btn btn-primary" style="margin-right: 0.5rem; width:100px; ">View</a>
+                    <button id="admin-delete-task-btn" class="btn btn-danger" onclick="deleteTask(${task.id})">Delete</button>
                 </div>
             </div>
         `).join('');

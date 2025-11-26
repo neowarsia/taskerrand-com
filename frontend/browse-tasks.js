@@ -41,11 +41,11 @@ async function loadTasks() {
         
         container.innerHTML = tasks.map(task => `
             <div class="task-card" onclick="window.location.href='./task-detail.html?id=${task.id}'">
-                <h3>${task.title}</h3>
-                <p>${task.description.substring(0, 150)}${task.description.length > 150 ? '...' : ''}</p>
+                <h3>Task: ${task.title}</h3>
+                <p>Description: ${task.description.substring(0, 150)}${task.description.length > 150 ? '...' : ''}</p>
                 <div class="task-meta">
-                    <span class="task-status status-${task.status}">${task.status}</span>
-                    <span><strong>₱${task.payment.toFixed(2)}</strong></span>
+                    <span style="display: block" class="task-status status-${task.status}">Status: ${task.status}</span>
+                    <span><strong>Payment: ₱${task.payment.toFixed(2)}</strong></span>
                 </div>
                 ${task.location_address ? `<p style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.875rem;">📍 ${task.location_address}</p>` : ''}
             </div>
