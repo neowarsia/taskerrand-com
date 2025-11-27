@@ -248,6 +248,10 @@ async def cancel_task(
     if task.status == "available":
         if task.poster_id != current_user.id:
             raise HTTPException(status_code=403, detail="Only the poster can cancel available tasks")
+        # Poster cancelling an available task: mark as cancelled
+        task.status = "cancelled"
+        task.seeker_id = None
+        task.accepted_at = None
     elif task.status == "ongoing":
         if task.poster_id != current_user.id and task.seeker_id != current_user.id:
             raise HTTPException(status_code=403, detail="Not authorized to cancel this task")

@@ -10,6 +10,10 @@ const auth = getAuth(app);
 let map;
 let marker;
 let geocoderCache = {}; // Cache for geocoding results
+const urlParams = new URLSearchParams(window.location.search);
+const editTaskId = urlParams.get('id');
+const editMode = (urlParams.get('edit') === '1' || urlParams.get('edit') === 'true');
+let pendingMarkerCoords = null;
 
 // Check authentication
 onAuthStateChanged(auth, (user) => {
@@ -31,7 +35,76 @@ onAuthStateChanged(auth, (user) => {
     
     // Initialize map after DOM is ready
     setTimeout(initMap, 100);
+    // Check if we're editing an existing task and load it
+    setTimeout(() => {
+        if (editMode && editTaskId) {
+            checkEditMode();
+        }
+    }, 300);
 });
+
+async function checkEditMode() {
+    try {
+        const me = await api.getCurrentUser();
+        if (!me) return;
+        if (!editMode || !editTaskId) return;
+
+        const task = await api.getTask(editTaskId);
+        if (!task) return;
+
+        // Only allow the poster to edit (basic guard)
+        if (String(task.poster_id) !== String(me.id)) {
+            alert('You are not authorized to edit this task.');
+            window.location.href = './dashboard.html';
+            return;
+        }
+
+        // Pre-fill form
+        document.getElementById('title').value = task.title || '';
+        document.getElementById('description').value = task.description || '';
+        document.getElementById('payment').value = task.payment || '';
+        document.getElementById('contact_number').value = task.contact_number || '';
+        if (task.schedule) {
+            const d = new Date(task.schedule);
+            // format to YYYY-MM-DDThh:mm for datetime-local
+            const offset = d.getTimezoneOffset();
+            const local = new Date(d.getTime() - (offset*60000));
+            document.getElementById('schedule').value = local.toISOString().slice(0,16);
+        }
+        if (task.location_address) document.getElementById('location_address').value = task.location_address;
+        if (task.location_lat) document.getElementById('location_lat').value = task.location_lat;
+        if (task.location_lng) document.getElementById('location_lng').value = task.location_lng;
+
+        // Update UI: change button text and cancel link
+        const submitBtn = document.querySelector('.post-task-buttons-container .btn-primary');
+        if (submitBtn) submitBtn.textContent = 'Update Task';
+
+        const cancelLink = document.querySelector('.post-task-buttons-container .btn-outline');
+        if (cancelLink) cancelLink.href = `./task-detail.html?id=${editTaskId}`;
+
+        // If map already initialized, place marker
+        if (map && task.location_lat && task.location_lng) {
+            const lat = parseFloat(task.location_lat);
+            const lng = parseFloat(task.location_lng);
+            map.setView([lat, lng], 15);
+            if (marker) {
+                marker.setLatLng([lat, lng]);
+            } else {
+                marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+                marker.on('dragend', (e) => {
+                    const position = marker.getLatLng();
+                    updateLocationFromMarker([position.lat, position.lng]);
+                });
+            }
+        } else if (task.location_lat && task.location_lng) {
+            // If map not ready yet, store coords to apply later in initMap
+            pendingMarkerCoords = [parseFloat(task.location_lat), parseFloat(task.location_lng)];
+        }
+
+    } catch (error) {
+        console.error('Error loading task for edit:', error);
+    }
+}
 
 // Initialize Leaflet Map
 function initMap() {
@@ -115,6 +188,28 @@ function initMap() {
             }
         }
     });
+
+    // Apply pending marker coords if we loaded edit data before map init
+    applyPendingMarker();
+}
+
+// If we had pending marker coords from edit mode, apply them after map initialization
+function applyPendingMarker() {
+    if (pendingMarkerCoords && map) {
+        const [lat, lng] = pendingMarkerCoords;
+        map.setView([lat, lng], 15);
+        if (marker) {
+            marker.setLatLng([lat, lng]);
+        } else {
+            marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+            marker.on('dragend', (e) => {
+                const position = marker.getLatLng();
+                updateLocationFromMarker([position.lat, position.lng]);
+            });
+        }
+        updateLocationFromMarker([lat, lng]);
+        pendingMarkerCoords = null;
+    }
 }
 
 // Update location fields from marker position
@@ -386,9 +481,15 @@ document.getElementById("task-form").addEventListener("submit", async (e) => {
     };
 
     try {
-        await api.createTask(formData);
-        alert("Task posted successfully!");
-        window.location.href = "./dashboard.html";
+        if (editMode && editTaskId) {
+            await api.updateTask(editTaskId, formData);
+            alert("Task updated successfully!");
+            window.location.href = `./task-detail.html?id=${editTaskId}`;
+        } else {
+            await api.createTask(formData);
+            alert("Task posted successfully!");
+            window.location.href = "./dashboard.html";
+        }
     } catch (error) {
         showError(`<div class='error'>Error: ${error.message}</div>`);
     }

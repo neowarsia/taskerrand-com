@@ -38,6 +38,17 @@
         
         <div class="container">
             <h2>My Tasks</h2>
+            <div style="margin-bottom: 1rem;">
+                <label>Filter by status: </label>
+                <select id="my-task-filter" onchange="filterMyTasks()">
+                    <option value="">All</option>
+                    <option value="available">Available</option>
+                    <option value="ongoing">Ongoing</option>
+                    <option value="pending_confirmation">Pending Confirmation</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+            </div>
             <div id="my-tasks" class="task-grid"></div>
         </div>
     </main>

@@ -12,6 +12,8 @@ let userData = null;
 let taskData = null;
 let map = null;
 let seekerFeedbackList = null;
+let userCache = {};
+let taskPollTimer = null;
 
 // Get task ID from URL
 const urlParams = new URLSearchParams(window.location.search);
@@ -53,10 +55,17 @@ async function loadTask() {
     
     try {
         taskData = await api.getTask(taskId);
+        // prime cache with poster and seeker
+        if (taskData.poster_id) {
+            try { userCache[taskData.poster_id] = (await api.getUser(taskData.poster_id)).name || null; } catch(e) { /* ignore */ }
+        }
+        if (taskData.seeker_id) {
+            try { userCache[taskData.seeker_id] = (await api.getUser(taskData.seeker_id)).name || null; } catch(e) { /* ignore */ }
+        }
         seekerFeedbackList = null;
         displayTask();
         setupActions();
-        displayFeedbackSection();
+        await displayFeedbackSection();
         if (taskData.status === "ongoing" || taskData.status === "pending_confirmation") {
             loadMessages();
             document.getElementById("chat-container").style.display = "block";
@@ -67,13 +76,60 @@ async function loadTask() {
     } catch (error) {
         document.getElementById("task-container").innerHTML = `<div class='error'>Error loading task: ${error.message}</div>`;
     }
+    // Ensure polling is started once we have initial task data
+    startTaskPolling();
 }
+
+function startTaskPolling() {
+    // Start polling only once per page
+    if (taskPollTimer) return;
+    // Poll every 5 seconds
+    taskPollTimer = setInterval(async () => {
+        try {
+            const updated = await api.getTask(taskId);
+            // If status or seeker changed, update the UI
+            const oldStatus = taskData ? taskData.status : null;
+            const oldSeeker = taskData ? String(taskData.seeker_id) : null;
+            const newSeeker = updated ? String(updated.seeker_id) : null;
+            if (!taskData || updated.status !== oldStatus || newSeeker !== oldSeeker) {
+                taskData = updated;
+                displayTask();
+                setupActions();
+                // refresh feedback and messages visibility if needed
+                displayFeedbackSection();
+                if (taskData.status === "ongoing" || taskData.status === "pending_confirmation") {
+                    loadMessages();
+                    const chatEl = document.getElementById("chat-container");
+                    if (chatEl) chatEl.style.display = "block";
+                } else {
+                    const chatEl = document.getElementById("chat-container");
+                    if (chatEl) chatEl.style.display = "none";
+                }
+            }
+        } catch (e) {
+            console.error("Task polling error:", e);
+        }
+    }, 5000);
+}
+
+function stopTaskPolling() {
+    if (taskPollTimer) {
+        clearInterval(taskPollTimer);
+        taskPollTimer = null;
+    }
+}
+
+// Clean up polling when the user leaves the page
+window.addEventListener('beforeunload', () => {
+    stopTaskPolling();
+});
 
 function displayTask() {
     const container = document.getElementById("task-container");
     
     container.innerHTML = `
         <h2>Title: ${taskData.title}</h2>
+        ${taskData.poster_id ? `<div class="task-creator">Created by: ${userCache[taskData.poster_id] || 'Unknown'}</div>` : ''}
         <div style="margin-bottom: 1rem;">
             <span class="task-status status-${taskData.status}">Status: ${taskData.status.replace('_', ' ')}</span>
         </div>
@@ -119,23 +175,24 @@ function setupActions() {
     
     if (!userData) return;
     
-    const isPoster = taskData.poster_id === userData.id;
-    const isSeeker = taskData.seeker_id === userData.id;
+    // Normalize IDs to string to avoid type-mismatch issues (numbers vs strings)
+    const isPoster = String(taskData.poster_id) === String(userData.id);
+    const isSeeker = String(taskData.seeker_id) === String(userData.id);
     
     let buttons = [];
     
     if (taskData.status === "available") {
         if (isPoster) {
+            // Edit button to the LEFT of Cancel (poster may edit an available task)
+            buttons.push(`<a href="./post-task.html?id=${taskData.id}&edit=1" class="btn btn-outline">Edit</a>`);
             buttons.push(`<button class="btn btn-danger" onclick="cancelTask()">Cancel Task</button>`);
-            //buttons.push(`<a href="./edit-task.html?id=${taskData.id}" class="btn btn-outline">Edit Task</a>`);
         } else {
             buttons.push(`<button class="btn btn-primary" onclick="acceptTask()">Accept Task</button>`);
         }
     } else if (taskData.status === "ongoing") {
+        // Only the seeker (the one who accepted) can mark complete or cancel an ongoing task.
         if (isSeeker) {
             buttons.push(`<button class="btn btn-secondary" onclick="completeTask()">Mark as Complete</button>`);
-        }
-        if (isPoster || isSeeker) {
             buttons.push(`<button class="btn btn-danger" onclick="cancelTask()">Cancel Task</button>`);
         }
     } else if (taskData.status === "pending_confirmation") {
@@ -151,6 +208,10 @@ function setupActions() {
     if (buttons.length > 0) {
         actionButtons.innerHTML = buttons.join(" ");
         actionsContainer.style.display = "block";
+    } else {
+        // Clear any previous buttons and hide container when no actions apply
+        actionButtons.innerHTML = "";
+        actionsContainer.style.display = "none";
     }
 }
 
@@ -227,16 +288,32 @@ async function loadMessages() {
         const messages = await api.getTaskMessages(taskId);
         const messagesContainer = document.getElementById("messages");
         
-        messagesContainer.innerHTML = messages.map(msg => {
-            const isSent = msg.sender_id === userData.id;
+        // Render messages with sender name and modern chat alignment
+        const rendered = await Promise.all(messages.map(async (msg) => {
+            const isSent = String(msg.sender_id) === String(userData.id);
             const time = new Date(msg.created_at).toLocaleTimeString();
+            // get sender name from cache or API
+            let senderName = userCache[msg.sender_id];
+            if (!senderName) {
+                try {
+                    const u = await api.getUser(msg.sender_id);
+                    senderName = u.name || u.email || 'User';
+                    userCache[msg.sender_id] = senderName;
+                } catch (e) {
+                    senderName = 'User';
+                }
+            }
+
             return `
                 <div class="message ${isSent ? 'sent' : 'received'}">
+                    ${!isSent ? `<div class="sender-name">${senderName}</div>` : ''}
                     <div>${msg.content}</div>
                     <div class="message-time">${time}</div>
                 </div>
             `;
-        }).join('');
+        }));
+
+        messagesContainer.innerHTML = rendered.join('');
         
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     } catch (error) {
@@ -274,11 +351,11 @@ async function loadSeekerRating(seekerId) {
         console.error("Error loading seeker feedback:", error);
         seekerFeedbackList = [];
     } finally {
-        displayFeedbackSection();
+        await displayFeedbackSection();
     }
 }
 
-function displayFeedbackSection() {
+async function displayFeedbackSection() {
     const feedbackContainer = document.getElementById("feedback-container");
     const feedbackContent = document.getElementById("feedback-content");
     const ratingSummary = document.getElementById("seeker-rating-summary");
@@ -296,9 +373,20 @@ function displayFeedbackSection() {
 
     if (taskData.feedback) {
         const { rating, comment, created_at } = taskData.feedback;
+        // Ensure we have names for poster and seeker
+        let posterName = userCache[taskData.poster_id];
+        if (!posterName && taskData.poster_id) {
+            try { posterName = (await api.getUser(taskData.poster_id)).name || null; userCache[taskData.poster_id] = posterName; } catch(e) { posterName = 'Poster'; }
+        }
+        let seekerName = userCache[taskData.seeker_id];
+        if (!seekerName && taskData.seeker_id) {
+            try { seekerName = (await api.getUser(taskData.seeker_id)).name || null; userCache[taskData.seeker_id] = seekerName; } catch(e) { seekerName = 'Seeker'; }
+        }
+
         feedbackContent.innerHTML = `
             <div class="task-card" style="margin-bottom: 1rem;">
                 <p><strong>Task Feedback</strong></p>
+                <p style="margin:0.25rem 0;"><strong>From:</strong> ${posterName || 'Poster'} &nbsp; <strong>To:</strong> ${seekerName || 'Seeker'}</p>
                 <p class="task-status" style="margin: 0.5rem 0;">${renderStars(rating)} (${rating}/5)</p>
                 ${comment ? `<p>"${comment}"</p>` : "<p>No written comment.</p>"}
                 <p class="message-time">Submitted ${new Date(created_at).toLocaleString()}</p>

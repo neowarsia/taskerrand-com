@@ -100,9 +100,13 @@ async function loadAllTasks(statusFilter = null) {
             return;
         }
         
-        container.innerHTML = tasks.map(task => `
+        const rendered = await Promise.all(tasks.map(async (task) => {
+            let posterName = 'Unknown';
+            try { const u = await api.getUser(task.poster_id); posterName = u.name || u.email || posterName; } catch(e) {}
+            return `
             <div class="task-card">
                 <h3>Title: ${task.title}</h3>
+                <div class="task-creator">Created by: ${posterName}</div>
                 <p>Description: ${task.description.substring(0, 100)}${task.description.length > 100 ? '...' : ''}</p>
                 <div class="task-meta">
                     <span style="display: block" class="task-status status-${task.status}">Status: ${task.status.replace('_', ' ')}</span>
@@ -114,7 +118,10 @@ async function loadAllTasks(statusFilter = null) {
                     <button id="admin-delete-task-btn" class="btn btn-danger" onclick="deleteTask(${task.id})">Delete</button>
                 </div>
             </div>
-        `).join('');
+        `;
+        }));
+
+        container.innerHTML = rendered.join('');
     } catch (error) {
         console.error("Error loading tasks:", error);
         container.innerHTML = `<div class="error">Error loading tasks: ${error.message}</div>`;

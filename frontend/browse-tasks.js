@@ -39,9 +39,18 @@ async function loadTasks() {
             return;
         }
         
-        container.innerHTML = tasks.map(task => `
+        // fetch poster names in parallel and render
+        const rendered = await Promise.all(tasks.map(async (task) => {
+            let posterName = 'Unknown';
+            try {
+                const u = await api.getUser(task.poster_id);
+                posterName = u.name || u.email || posterName;
+            } catch (e) { /* ignore */ }
+
+            return `
             <div class="task-card" onclick="window.location.href='./task-detail.html?id=${task.id}'">
                 <h3>Task: ${task.title}</h3>
+                <div class="task-creator">Created by: ${posterName}</div>
                 <p>Description: ${task.description.substring(0, 150)}${task.description.length > 150 ? '...' : ''}</p>
                 <div class="task-meta">
                     <span style="display: block" class="task-status status-${task.status}">Status: ${task.status}</span>
@@ -49,7 +58,10 @@ async function loadTasks() {
                 </div>
                 ${task.location_address ? `<p style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.875rem;">📍 ${task.location_address}</p>` : ''}
             </div>
-        `).join('');
+        `;
+        }));
+
+        container.innerHTML = rendered.join('');
     } catch (error) {
         console.error("Error loading tasks:", error);
         container.innerHTML = `<div class="error">Error loading tasks: ${error.message}</div>`;
