@@ -281,6 +281,31 @@ h3{
 
 
 
+/*
+search-task-result.html
+*/
+
+#search-input{
+    border-radius: 5px;;
+}
+
+#search-btn{
+    border-radius: 5px;
+}
+
+#search-btn:hover{
+    scale: 1.05;
+    border-radius: 5px;
+    transition: .4s ease-in-out;
+}
+
+
+
+
+
+
+
+
 
 
 

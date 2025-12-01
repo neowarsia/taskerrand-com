@@ -47,7 +47,26 @@
                     <option value="cancelled">Cancelled</option>
                 </select>
             </div>
-            <div id="tasks-container" class="task-grid"></div>
+            <!-- Admin search (navigate to admin-task-search results page) -->
+            <div style="margin-bottom: 1rem;">
+                <form id="admin-search-form" style="display:flex; gap:0.5rem; align-items:center;">
+                    <input id="admin-search-input" type="text" placeholder="Search tasks by title (admin)..." style="flex:1; padding:0.5rem; border-radius:5px;" />
+                    <button id="search-btn" type="submit" style="padding:0.5rem 0.9rem;">Search</button>
+                </form>
+            </div>
+                <div id="tasks-container" class="task-grid"></div>
+                <script>
+                    // Admin search form routing: navigate to admin-task-search.html with query param
+                    const adminSearchForm = document.getElementById('admin-search-form');
+                    if (adminSearchForm) {
+                        adminSearchForm.addEventListener('submit', (e) => {
+                            e.preventDefault();
+                            const q = document.getElementById('admin-search-input').value.trim();
+                            if (!q) return;
+                            window.location.href = `./admin-task-search.html?q=${encodeURIComponent(q)}`;
+                        });
+                    }
+                </script>
         </div>
         
         <div class="container">

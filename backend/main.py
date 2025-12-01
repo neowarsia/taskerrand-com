@@ -112,6 +112,36 @@ async def get_tasks(
             query = query.filter(Task.status == "available")
     return query.order_by(Task.created_at.desc()).all()
 
+
+@app.get("/api/tasks/search", response_model=List[TaskResponse])
+async def search_tasks(
+    query: Optional[str] = None,
+    status_filter: Optional[str] = None,
+    current_user: User = Depends(get_current_user_db),
+    db: Session = Depends(get_db)
+):
+    """Search tasks by title (case-insensitive substring match).
+
+    Regular users will only see available tasks. Admins can search across all statuses.
+    """
+    q = db.query(Task)
+    # Apply status filter or restrict to available tasks for non-admins
+    if status_filter:
+        q = q.filter(Task.status == status_filter)
+    else:
+        if not current_user.is_admin:
+            q = q.filter(Task.status == "available")
+
+    if query:
+        # Use case-insensitive match
+        try:
+            q = q.filter(Task.title.ilike(f"%{query}%"))
+        except Exception:
+            # Fallback to naive contains if ilike not supported
+            q = q.filter(Task.title.contains(query))
+
+    return q.order_by(Task.created_at.desc()).all()
+
 @app.get("/api/tasks/{task_id}", response_model=TaskResponse)
 async def get_task(
     task_id: int,

@@ -117,5 +117,11 @@ export const api = {
     })
 };
 
+// Search tasks by title (server-side substring match)
+api.searchTasks = (query) => {
+    const params = query ? `?query=${encodeURIComponent(query)}` : "";
+    return apiRequest(`/api/tasks/search${params}`);
+};
+
 export { auth };
 
