@@ -22,15 +22,21 @@ onAuthStateChanged(auth, async (user) => {
 
 async function performAdminSearch(){
     const q = getQueryParam('q') || '';
+    const statusFilter = getQueryParam('status_filter') || '';
     const container = document.getElementById('admin-search-results-container');
     const heading = document.getElementById('results-heading');
     const paginationEl = document.getElementById('admin-search-pagination');
 
-    document.getElementById('search-input').value = q;
+    // populate input and status select
+    const inputEl = document.getElementById('search-input');
+    const statusSelect = document.getElementById('search-status-select');
+    if (inputEl) inputEl.value = q;
+    if (statusSelect) statusSelect.value = statusFilter;
+
     heading.textContent = q ? `Admin Search Results for "${q}"` : 'Admin Search Results';
 
     try{
-        const results = await api.searchTasks(q);
+        const results = await api.searchTasks(q, statusFilter || null);
         if (!results || results.length === 0){ container.innerHTML = `<p class='loading'>No tasks match your search.</p>`; if (paginationEl) paginationEl.innerHTML = ''; return; }
 
         let allTasks = results;
@@ -89,7 +95,19 @@ async function performAdminSearch(){
 
 // hook up local form on this page
 const searchForm = document.getElementById('search-form');
-if (searchForm){ searchForm.addEventListener('submit', (e)=>{ e.preventDefault(); const q = document.getElementById('search-input').value.trim(); if (!q) return; const url = new URL(window.location.href); url.searchParams.set('q', q); window.history.replaceState({},'',url); performAdminSearch(); }); }
+if (searchForm){
+    searchForm.addEventListener('submit', (e)=>{
+        e.preventDefault();
+        const q = document.getElementById('search-input').value.trim();
+        const status = document.getElementById('search-status-select') ? document.getElementById('search-status-select').value : '';
+        if (!q) return;
+        const url = new URL(window.location.href);
+        url.searchParams.set('q', q);
+        if (status) url.searchParams.set('status_filter', status); else url.searchParams.delete('status_filter');
+        window.history.replaceState({},'',url);
+        performAdminSearch();
+    });
+}
 
 // Also add a small script on admin-dashboard to route search form — handled in admin-dashboard.html insert
 

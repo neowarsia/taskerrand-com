@@ -62,8 +62,10 @@
                         adminSearchForm.addEventListener('submit', (e) => {
                             e.preventDefault();
                             const q = document.getElementById('admin-search-input').value.trim();
+                            const status = document.getElementById('task-filter') ? document.getElementById('task-filter').value : '';
                             if (!q) return;
-                            window.location.href = `./admin-task-search.html?q=${encodeURIComponent(q)}`;
+                            const params = `q=${encodeURIComponent(q)}` + (status ? `&status_filter=${encodeURIComponent(status)}` : '');
+                            window.location.href = `./admin-task-search.html?${params}`;
                         });
                     }
                 </script>

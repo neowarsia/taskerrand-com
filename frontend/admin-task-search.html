@@ -73,6 +73,14 @@
             <h2 id="results-heading">Admin Search Results</h2>
             <form id="search-form" class="search-form">
                 <input id="search-input" type="text" placeholder="Search tasks by title..." aria-label="Search tasks by title" />
+                <select id="search-status-select" aria-label="Filter status" style="padding:0.5rem;">
+                    <option value="">All</option>
+                    <option value="available">Available</option>
+                    <option value="ongoing">Ongoing</option>
+                    <option value="pending_confirmation">Pending Confirmation</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
                 <button id="search-btn" type="submit">Search</button>
             </form>
 

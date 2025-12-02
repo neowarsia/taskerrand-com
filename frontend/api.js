@@ -117,9 +117,12 @@ export const api = {
     })
 };
 
-// Search tasks by title (server-side substring match)
-api.searchTasks = (query) => {
-    const params = query ? `?query=${encodeURIComponent(query)}` : "";
+// Search tasks by title (server-side substring match) with optional status filter
+api.searchTasks = (query, statusFilter = null) => {
+    const parts = [];
+    if (query) parts.push(`query=${encodeURIComponent(query)}`);
+    if (statusFilter) parts.push(`status_filter=${encodeURIComponent(statusFilter)}`);
+    const params = parts.length ? `?${parts.join("&")}` : "";
     return apiRequest(`/api/tasks/search${params}`);
 };
 
