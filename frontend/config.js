@@ -11,4 +11,4 @@ export const firebaseConfig = {
 // Backend API URL - change this to your backend URL
 //export const API_URL = "http://localhost:8000";
 
-export const API_URL = "https://your-backend.onrender.com";
+export const API_URL = "https://taskerrand.onrender.com";
