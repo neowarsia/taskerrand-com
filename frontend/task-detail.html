@@ -26,22 +26,24 @@
             flex-wrap: wrap;
         }
         #action-buttons.actions-wrapper .btn {
-            flex: 0 1 auto;
+            flex: 1 1 auto;
             text-align: center;
             min-width: 0;
             box-sizing: border-box;
-            white-space: normal;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 15px;
+            padding: 10px 12px;
         }
-        /* On small screens, allow button text to wrap and reduce padding */
+        /* On small screens, reduce padding and font size to fit one line */
         @media (max-width: 768px) {
             #action-buttons.actions-wrapper .btn {
-                padding: 8px 10px;
-                font-size: 14px;
+                padding: 8px 8px;
+                font-size: 13px;
             }
         }
-        /* On very small screens, stack buttons full-width */
+        /* On very small screens, stack buttons full-width for comfort */
         @media (max-width: 520px) {
             #action-buttons.actions-wrapper {
                 flex-direction: column;
@@ -51,6 +53,7 @@
                 width: 100%;
                 padding: 10px 8px;
                 font-size: 14px;
+                white-space: normal;
             }
         }
     </style>

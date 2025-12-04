@@ -456,13 +456,15 @@ post-task.html
     flex-wrap: wrap;
 }
 .actions-wrapper .btn {
-    min-width: 100px;
-    padding: 10px 16px;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 10px 14px;
     border-radius: 8px;
     font-weight: 600;
-    white-space: normal;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 15px;
 }
 .actions-wrapper .btn-primary {
     background: #2563eb; /* blue */
@@ -479,9 +481,8 @@ post-task.html
 
 @media (max-width: 768px) {
     .actions-wrapper .btn {
-        min-width: 80px;
-        padding: 8px 12px;
-        font-size: 14px;
+        padding: 8px 10px;
+        font-size: 13px;
     }
 }
 
@@ -492,9 +493,10 @@ post-task.html
     }
     .actions-wrapper .btn {
         width: 100%;
-        min-width: unset;
         padding: 10px 8px;
         font-size: 14px;
+        white-space: normal;
+        overflow: visible;
     }
     #action-buttons { width: 100%; }
 }
