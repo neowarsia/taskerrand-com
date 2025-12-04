@@ -457,25 +457,29 @@ post-task.html
 }
 .actions-wrapper .btn {
     flex: 1 1 0;
-    min-width: 0;
+    min-width: 120px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 10px 14px;
     border-radius: 8px;
     font-weight: 600;
+    white-space: nowrap;
 }
 .actions-wrapper .btn-primary {
     background: #2563eb; /* blue */
     color: white;
+    min-width: 140px;
 }
 .actions-wrapper .btn-secondary {
     background: #6b7280; /* gray */
     color: white;
+    min-width: 120px;
 }
 .actions-wrapper .btn-danger {
     background: #ef4444; /* red */
     color: white;
+    min-width: 120px;
 }
 
 @media (max-width: 600px) {
@@ -485,6 +489,8 @@ post-task.html
     }
     .actions-wrapper .btn {
         width: 100%;
+        min-width: unset;
+        white-space: normal;
     }
     #action-buttons { width: 100%; }
 }
@@ -597,16 +603,13 @@ post-task.html
     .send-btn .send-text { display: inline; }
 }
 
-/* Post-task button overrides to restore wider appearance */
-.post-task-buttons-container { display: flex; gap: 12px; }
+/* Post-task buttons: ensure they stay in one line on desktop with min-width constraints */
 .post-task-buttons-container .btn-primary { min-width: 220px; }
 .post-task-buttons-container .btn-outline { min-width: 120px; }
+
 @media (max-width: 600px) {
     .post-task-buttons-container { flex-direction: column; }
     .post-task-buttons-container .btn-primary, .post-task-buttons-container .btn-outline { width: 100%; min-width: unset; }
-    /* Ensure the wrapper spans don't introduce overflow on small screens */
-    .post-task-buttons-container .post-task-buttons { display: block; width: 100%; }
-    .post-task-buttons-container .post-task-buttons .btn { width: 100%; box-sizing: border-box; }
 }
 
 
