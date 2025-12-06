@@ -192,7 +192,7 @@ function setupActions() {
     } else if (taskData.status === "ongoing") {
         // Only the seeker (the one who accepted) can mark complete or cancel an ongoing task.
         if (isSeeker) {
-            buttons.push(`<button class="btn btn-secondary" onclick="completeTask()">Mark as Complete</button>`);
+            buttons.push(`<button class="btn btn-secondary" onclick="completeTask()">Mark as Done</button>`);
             buttons.push(`<button class="btn btn-danger" onclick="cancelTask()">Cancel Task</button>`);
         }
     } else if (taskData.status === "pending_confirmation") {
