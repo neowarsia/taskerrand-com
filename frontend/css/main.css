@@ -399,6 +399,31 @@ post-task.html
     justify-content: center;
 }
 
+/* Shared hover button style used across the site (matches header hover effect) */
+.hover-btn {
+    position: relative;
+    overflow: hidden;
+    background-clip: padding-box;
+}
+.hover-btn::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: rgba(0,0,0,0.9);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 0.3s ease;
+}
+.hover-btn:hover::before {
+    transform: scaleX(1);
+}
+.hover-btn:hover {
+    transform: translateY(-3px);
+}
+
 /* Center text for cancel/danger/outlines in other places without changing global .btn */
 .btn-outline, .btn-danger {
     display: inline-flex;

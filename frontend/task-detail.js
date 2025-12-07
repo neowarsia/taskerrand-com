@@ -142,9 +142,10 @@ function displayTask() {
             ${taskData.schedule ? `<p><strong>Schedule:</strong> ${new Date(taskData.schedule).toLocaleString()}</p>` : ''}
             ${taskData.location_address ? `<p><strong>Location:</strong> ${taskData.location_address}</p>` : ''}
         </div>
-        <div id="map" style="width: 100%; height: 300px; margin-top: 1rem; border-radius: 6px;"></div>
-        <div style="margin-top: 1rem; text-align: center;">
-            <button id="report-task-btn" style="padding: 10px 20px; background-color: #dc2626; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
+        <div style="position: relative; margin-top: 1rem;">
+            <div id="map" style="width: 100%; height: 300px; border-radius: 6px;"></div>
+            <!-- Report button placed as an overlay on the right side of the map -->
+            <button id="report-task-btn" class="hover-btn side-report-btn" style="position: absolute; top: 12px; right: 12px; padding: 8px 12px; background-color: #dc2626; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; z-index: 1000;">
                 Report This Task
             </button>
         </div>
@@ -178,6 +179,16 @@ function initMap() {
 function setupReportButton() {
     const reportBtn = document.getElementById("report-task-btn");
     if (reportBtn) {
+        // Hide or disable reporting for the task poster (cannot report own task)
+        const isPoster = userData && taskData && String(userData.id) === String(taskData.poster_id);
+        if (isPoster) {
+            // hide the button to avoid confusion
+            reportBtn.style.display = 'none';
+            reportBtn.setAttribute('aria-hidden', 'true');
+            return;
+        }
+
+        // Non-blocking navigation to the report form for other users
         reportBtn.addEventListener("click", () => {
             window.location.href = `./report-task.html?task_id=${taskId}`;
         });
