@@ -65,6 +65,7 @@ async function loadTask() {
         seekerFeedbackList = null;
         displayTask();
         setupActions();
+        setupReportButton();
         await displayFeedbackSection();
         if (taskData.status === "ongoing" || taskData.status === "pending_confirmation") {
             loadMessages();
@@ -142,6 +143,11 @@ function displayTask() {
             ${taskData.location_address ? `<p><strong>Location:</strong> ${taskData.location_address}</p>` : ''}
         </div>
         <div id="map" style="width: 100%; height: 300px; margin-top: 1rem; border-radius: 6px;"></div>
+        <div style="margin-top: 1rem; text-align: center;">
+            <button id="report-task-btn" style="padding: 10px 20px; background-color: #dc2626; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                Report This Task
+            </button>
+        </div>
     `;
     
     // Initialize map after a short delay to ensure DOM is ready
@@ -168,6 +174,15 @@ function initMap() {
         .bindPopup(taskData.title)
         .openPopup();
 };
+
+function setupReportButton() {
+    const reportBtn = document.getElementById("report-task-btn");
+    if (reportBtn) {
+        reportBtn.addEventListener("click", () => {
+            window.location.href = `./report-task.html?task_id=${taskId}`;
+        });
+    }
+}
 
 function setupActions() {
     const actionsContainer = document.getElementById("actions-container");

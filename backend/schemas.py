@@ -106,3 +106,38 @@ class MessageResponse(MessageBase):
     class Config:
         from_attributes = True
 
+
+# Task Report Schemas
+class TaskReportBase(BaseModel):
+    report_type: str
+    description: Optional[str] = None
+
+
+class TaskReportCreate(TaskReportBase):
+    task_id: int
+
+
+class TaskReportResponse(TaskReportBase):
+    id: int
+    task_id: int
+    reporter_id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# Notification Schemas
+class NotificationBase(BaseModel):
+    task_id: Optional[int] = None
+    notif_type: str
+
+
+class NotificationResponse(NotificationBase):
+    id: int
+    user_id: int
+    seen: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

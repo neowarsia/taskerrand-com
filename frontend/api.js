@@ -114,6 +114,17 @@ export const api = {
     },
     adminDeleteTask: (taskId) => apiRequest(`/api/admin/tasks/${taskId}`, {
         method: "DELETE"
+    }),
+    
+    // Report endpoints
+    createReport: (taskId, reportType, description) => apiRequest("/api/reports", {
+        method: "POST",
+        body: JSON.stringify({ task_id: taskId, report_type: reportType, description })
+    }),
+    getReports: () => apiRequest("/api/reports"),
+    getReport: (reportId) => apiRequest(`/api/reports/${reportId}`),
+    deleteReport: (reportId) => apiRequest(`/api/reports/${reportId}`, {
+        method: "DELETE"
     })
 };
 

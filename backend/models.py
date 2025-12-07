@@ -77,3 +77,17 @@ class Feedback(Base):
     poster = relationship("User", foreign_keys=[poster_id], back_populates="given_feedback")
     seeker = relationship("User", foreign_keys=[seeker_id], back_populates="received_feedback")
 
+
+class TaskReport(Base):
+    __tablename__ = "task_reports"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    task_id = Column(Integer, ForeignKey("tasks.id"), nullable=False)
+    reporter_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    report_type = Column(String, nullable=False)  # fraudulent, illegal, inappropriate, other
+    description = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    task = relationship("Task")
+    reporter = relationship("User")

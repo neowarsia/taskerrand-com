@@ -7,10 +7,11 @@ from typing import List, Optional
 from datetime import datetime
 
 from database import SessionLocal, engine, Base
-from models import User, Task, Message, Feedback
+from models import User, Task, Message, Feedback, TaskReport
 from schemas import (
     UserCreate, UserResponse, TaskCreate, TaskUpdate, TaskResponse,
-    MessageCreate, MessageResponse, FeedbackCreate, FeedbackResponse
+    MessageCreate, MessageResponse, FeedbackCreate, FeedbackResponse,
+    TaskReportCreate, TaskReportResponse
 )
 from auth import verify_firebase_token, get_current_user
 
@@ -446,6 +447,80 @@ async def admin_delete_task(
     db.delete(task)
     db.commit()
     return None
+
+# ==================== TASK REPORT ENDPOINTS ====================
+
+@app.post("/api/reports", response_model=TaskReportResponse, status_code=status.HTTP_201_CREATED)
+async def create_report(
+    report: TaskReportCreate,
+    current_user: User = Depends(get_current_user_db),
+    db: Session = Depends(get_db)
+):
+    # Verify task exists
+    task = db.query(Task).filter(Task.id == report.task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    # Create report
+    db_report = TaskReport(
+        task_id=report.task_id,
+        reporter_id=current_user.id,
+        report_type=report.report_type,
+        description=report.description
+    )
+    db.add(db_report)
+    db.commit()
+    db.refresh(db_report)
+    return db_report
+
+
+@app.get("/api/reports", response_model=List[TaskReportResponse])
+async def get_reports(
+    current_user: User = Depends(get_current_user_db),
+    db: Session = Depends(get_db)
+):
+    # Only admins can view reports
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    return db.query(TaskReport).order_by(TaskReport.created_at.desc()).all()
+
+
+@app.get("/api/reports/{report_id}", response_model=TaskReportResponse)
+async def get_report(
+    report_id: int,
+    current_user: User = Depends(get_current_user_db),
+    db: Session = Depends(get_db)
+):
+    # Only admins can view reports
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    report = db.query(TaskReport).filter(TaskReport.id == report_id).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    
+    return report
+
+
+@app.delete("/api/reports/{report_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_report(
+    report_id: int,
+    current_user: User = Depends(get_current_user_db),
+    db: Session = Depends(get_db)
+):
+    # Only admins can delete reports
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    report = db.query(TaskReport).filter(TaskReport.id == report_id).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    
+    db.delete(report)
+    db.commit()
+    return None
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="localhost", port=8000)
